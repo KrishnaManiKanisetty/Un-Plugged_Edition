@@ -1,0 +1,18 @@
+UNPLLM Project Notes
+
+UNPLLM (Unplugged LLM) is a final year B.Tech project focused on building
+an offline-first local LLM assistant. Unlike cloud AI assistants that
+require constant internet access, UNPLLM runs entirely on local hardware
+using a quantized small language model served through Ollama.
+
+The core innovation of UNPLLM is its usage-driven adaptive synchronization
+engine. Instead of requiring a manual document upload for its knowledge
+base, UNPLLM tracks which questions users ask most frequently and which
+answers had low retrieval confidence. When an internet connection becomes
+available, UNPLLM opportunistically fetches and embeds new information for
+exactly those topics, then goes back to running fully offline.
+
+The current implementation uses Phi-4-mini (3.8B parameters, Q4_K_M
+quantization) as the base model, all-MiniLM-L6-v2 for embeddings, and
+ChromaDB as the local vector store. The entire system is designed to run
+on CPU-only hardware with no dependency on a discrete GPU.

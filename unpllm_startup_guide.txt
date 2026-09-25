@@ -1,0 +1,113 @@
+========================================================
+UNPLLM - PROJECT STARTUP GUIDE
+========================================================
+Read this top to bottom every time you sit down after a
+break. Project location: ~/Desktop/UPE
+
+
+STEP 1 - CHECK OLLAMA IS RUNNING
+----------------------------------------
+Usually already running as a background service. Verify:
+
+    systemctl status ollama
+
+If not active:
+    sudo systemctl start ollama
+
+Confirm your model is there:
+    curl http://127.0.0.1:11434/api/tags
+
+Look for "phi4-mini:latest" in the response.
+
+
+STEP 2 - ENTER THE PROJECT AND ACTIVATE THE VENV
+----------------------------------------------------
+    cd ~/Desktop/UPE
+    source unpllm-env/bin/activate
+
+Your prompt should now start with (unpllm-env).
+
+
+STEP 3 - (ONE-TIME CHECK) CONFIRM DEPENDENCIES ARE INSTALLED
+------------------------------------------------------------------
+Only needed if you're not sure last session's install finished:
+
+    pip list | grep -E "chromadb|sentence-transformers|torch"
+
+All three should show up. If torch is missing or the install
+never finished, install the CPU-only build first - it's a much
+smaller download than the default (which bundles CUDA support
+this machine doesn't need):
+
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
+    pip install -r requirements.txt
+
+
+STEP 4 - START THE SERVER
+----------------------------------
+    python3 main.py
+
+Expect to see: "Uvicorn running on http://127.0.0.1:8000"
+This will NOT return to your prompt - that's correct, it's a
+running server now. Leave the terminal open. Ctrl+C to stop it.
+
+
+STEP 5 - TEST IT
+--------------------------
+In your browser:
+    http://127.0.0.1:8000/docs
+
+- /health         -> quick check the service is alive
+- /generate       -> plain model, no retrieval
+- /generate_rag   -> retrieval-augmented answers from documents/
+
+Remember to replace the placeholder "string" in the request body
+with a real prompt before clicking Execute.
+
+
+ADDING NEW NOTES TO THE KNOWLEDGE BASE
+------------------------------------------------
+Drop .txt or .md files into:
+    ~/Desktop/UPE/documents/
+
+Then re-run (safe to repeat any time, won't duplicate old ones):
+    python3 ingest.py
+
+
+IF SOMETHING SEEMS BROKEN
+------------------------------------
+"ModuleNotFoundError"          -> forgot to activate unpllm-env
+
+main.py runs, nothing happens  -> it's not broken. It should show
+                                   "Uvicorn running..." and just
+                                   sit there. Test via /docs, not
+                                   by watching the terminal.
+
+Script looks frozen             -> probably isn't. This machine is
+                                    CPU-only (~4 tok/s), so
+                                    generation genuinely takes a
+                                    while. Give it time.
+
+"Method Not Allowed" in browser -> you opened /generate directly
+                                    in the address bar. It only
+                                    accepts POST - use /docs
+                                    instead.
+
+
+KNOWN HARDWARE FACTS (so you stop re-checking these)
+----------------------------------------------------------
+- No NVIDIA GPU on this machine (confirmed via lspci)
+- phi4-mini: ~3.1 GB RAM when loaded, ~4.16 tok/s average speed
+- Check live RAM/CPU usage for the loaded model any time with:
+      ollama ps
+
+
+PROJECT FILES
+-------------------------
+main.py           FastAPI service (/health, /generate, /generate_rag)
+benchmark.py      Hardware benchmark script (Stage 1)
+rag_utils.py      Embedding + retrieval functions (Stage 2)
+ingest.py         Loads documents/ into the vector database (Stage 2)
+requirements.txt  All dependencies
+documents/        Your source notes for the knowledge base
+chroma_db/        The vector database itself (auto-created)
